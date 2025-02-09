@@ -47,6 +47,7 @@ glimpse(arquivo)
 ## Conversão de valores
 
 ```{r}
+#| echo: True
 arquivo$Data.da.Coleta <- gsub('[/]','-',
                                arquivo$Data.da.Coleta)
 arquivo$Data.da.Coleta <- lubridate::dmy(arquivo$Data.da.Coleta)
@@ -57,6 +58,7 @@ arquivo$Valor.de.Venda <- as.numeric(gsub('[,]','.', arquivo$Valor.de.Venda))
 ## Calculo das médias
 
 ```{r}
+#| echo: True 
 media_produtos_es <- filter(arquivo,Estado...Sigla=="ES") %>%
   group_by(Data.da.Coleta,Produto) %>%
   summarise(Valor.medio = mean(Valor.de.Venda,na.rm=TRUE)) %>%
@@ -104,12 +106,6 @@ plotar_heatmap <- function(dados,produto,cor){
 
 }
 
-#p2 <- plotar_heatmap(media_diaria_nacional_gasolina,"GASOLINA")
-#p3 <- plotar_heatmap(media_diaria_nacional_etanol,"ETANOL")
-
-#p_plotly2 <- ggplotly(p2)
-#p_plotly3 <- ggplotly(p3)
-
 
 ```
 ```{r}
@@ -133,6 +129,7 @@ p_plotly_etanol = ggplotly(p)
 
 p_plotly_etanol
 ```
+
 
 Quando observados individualmente, os estados não apresentaram variações elevadas nos preços. Os estados da região norte mantiveram um padrão de valores altos para os 3 tipos de combustíveis analisados, mantendo-se no topo do ranking de estados com preço mais alto para esses produtos.
 
