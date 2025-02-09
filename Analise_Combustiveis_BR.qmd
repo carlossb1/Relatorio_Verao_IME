@@ -98,6 +98,7 @@ plotar_heatmap <- function(dados,produto,cor){
   ggplot(dados,aes(x=Data.da.Coleta,y=Estado...Sigla,fill=Valor.Medio))+
   geom_tile(aes(fill = Valor.Medio))+
   labs(title=paste("Preço médio ",produto),x="Data do Registro", y="Sigla do Estado")+
+    theme(plot.title = element_text(hjust = 0.5))+
   scale_fill_gradient(low="white",high=cor)
 
 
@@ -133,9 +134,7 @@ p_plotly_etanol = ggplotly(p)
 p_plotly_etanol
 ```
 
-## Média diária nacional para o produto ETANOL
-
-
+Quando observados individualmente, os estados não apresentaram variações elevadas nos preços. Os estados da região norte mantiveram um padrão de valores altos para os 3 tipos de combustíveis analisados, mantendo-se no topo do ranking de estados com preço mais alto para esses produtos.
 
 
 ## Comparação entre a variação dos valores dos combustíveis no ES x Brasil
@@ -145,7 +144,7 @@ p <- ggplot()+
   geom_line(data= media_produtos_nacional, aes(x=Data.da.Coleta,y=Valor.medio,colour=Produto))+
   geom_line(data = media_produtos_es,linetype="dotted",
             aes(x=Data.da.Coleta, y = Valor.medio, colour = Produto))+
-  labs(x="Data do registro",y="Valor médio de venda",title="Variação Nacional x Estado do Espírito Santo (linha tracejada)")+
+  labs(x="Data do registro",y="Valor médio de venda",title="Variação Nacional x Estado do Espírito Santo")+
   theme(plot.title = element_text(hjust = 0)
         )
 
@@ -154,6 +153,9 @@ p_plotly <- ggplotly(p)
 p_plotly
 
 ```
+
+Analisando como os valores dos produtos se comportaram durante o mês de Dezembro, podemos observar que os valores dos combustíveis no Espírito Santo (linha tracejada) se mantiveram acima da média nacional por quase todo o período observado. As excessões foram os dias 23,30 e 31 de Dezembro, em que os dois tipos de gasolina registraram valor abaixo da média nacional, e o etanol se aproximou da média nacional.
+
 
 ```{r plot_preco_por_cidade_es}
 
