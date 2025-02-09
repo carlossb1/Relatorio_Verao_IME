@@ -1,0 +1,170 @@
+---
+title: "Projeto final - Relatórios Reprodutíveis com R"
+author: "José Carlos Barbosa"
+format: html
+title-block-banner: "FFDDFF"
+editor: visual
+execute:
+  warning: False
+df-print: paged
+lang: pt-BR
+toc: True
+---
+
+![](https://www.ime.usp.br/media/identidade_visual/imagens/IME+USP/Padr%C3%A3o/SVG/Vertical%20azul.svg){fig-align="center" width="30%"}
+
+## Quarto
+
+Uma análise simples visando praticar os conceitos abordados no curso sobre relatórios reprodutíveis com R lecionado pela Bea @beamilz.
+
+## Inicialização das bibliotecas e carregamento do dataset
+
+O dataset escolhido foi o [histórico de vendas Etanol + Gasolina Comum - Dezembro/2024](https://dados.gov.br/dados/conjuntos-dados/serie-historica-de-precos-de-combustiveis-e-de-glp)
+
+```{r}
+library(tidyverse)
+library(plotly)
+library(purrr)
+library(lubridate)
+arquivo <- read.csv("precos-gasolina-etanol-12.csv",sep=";")
+```
+
+## Visualização da estrutura do dataset
+
+```{r}
+#| label: tbl-dados
+#| tbl-cap: Tabela inicial
+
+knitr::kable(head(arquivo))
+
+```
+
+```{r}
+glimpse(arquivo)
+```
+
+## Conversão de valores
+
+```{r}
+arquivo$Data.da.Coleta <- gsub('[/]','-',
+                               arquivo$Data.da.Coleta)
+arquivo$Data.da.Coleta <- lubridate::dmy(arquivo$Data.da.Coleta)
+
+arquivo$Valor.de.Venda <- as.numeric(gsub('[,]','.', arquivo$Valor.de.Venda))
+```
+
+## Calculo das médias
+
+```{r}
+media_produtos_es <- filter(arquivo,Estado...Sigla=="ES") %>%
+  group_by(Data.da.Coleta,Produto) %>%
+  summarise(Valor.medio = mean(Valor.de.Venda,na.rm=TRUE)) %>%
+  arrange(Produto,desc(Valor.medio))
+
+media_produtos_nacional <- arquivo %>%
+  group_by(Data.da.Coleta,Produto) %>%
+  summarise(Valor.medio = mean(Valor.de.Venda, na.rm=TRUE))
+
+```
+
+## Estados com maior valor médio por categoria de combustível
+
+```{r}
+
+media_por_estado <- group_by(arquivo, Estado...Sigla,Produto) %>%
+  summarise(Valor.Medio = mean(Valor.de.Venda, na.rm = TRUE)) %>%
+  arrange(Produto,desc(Valor.Medio)) %>%
+  group_by(Produto) %>%
+  slice_head(n= 5)
+
+knitr::kable(media_por_estado)
+```
+```{r}
+media_diaria_nacional <- arquivo %>%
+  group_by(Estado...Sigla,Produto,Data.da.Coleta) %>%
+  summarise(Valor.Medio = mean(Valor.de.Venda, na.rm = TRUE))
+
+p <- ggplot(filter(media_diaria_nacional,Produto=="GASOLINA ADITIVADA"),aes(x=Data.da.Coleta,y=Estado...Sigla,fill=Valor.Medio))+
+  geom_tile()+
+  labs(title="Preço médio GASOLINA ADITIVADA",x="Data do Registro", y="Sigla do Estado")+
+  scale_fill_gradient(low="white",high="blue")
+
+p_plotly <- ggplotly(p)
+
+p_plotly
+```
+
+## Comparação entre a variação dos valores dos combustíveis no ES x Brasil
+
+```{r}
+p <- ggplot()+
+  geom_line(data= media_produtos_nacional, aes(x=Data.da.Coleta,y=Valor.medio,colour=Produto))+
+  geom_line(data = media_produtos_es,linetype="dotted",
+            aes(x=Data.da.Coleta, y = Valor.medio, colour = Produto))+
+  labs(x="Data do registro",y="Valor médio de venda",title="Variação Nacional x Estado do Espírito Santo (linha tracejada)")+
+  theme(plot.title = element_text(hjust = 0)
+        )
+
+p_plotly <- ggplotly(p)
+  
+p_plotly
+
+```
+
+```{r}
+
+
+media_por_municipio_es <- filter(arquivo,Estado...Sigla == "ES") %>%
+  group_by(Municipio,Produto)%>%
+  summarise(Valor.medio = mean(Valor.de.Venda, na.rm=TRUE))%>%
+  arrange(Produto,desc(Valor.medio))
+
+
+p <- ggplot(media_por_municipio_es, aes(y=Produto,x=Valor.medio,fill= Municipio))+
+  geom_bar(stat="identity", position = "dodge")+
+  labs(x="Preço médio de venda", y = "Produto", title="Preço médio por Município")+
+  theme(plot.title = element_text(hjust = 0.5))
+p_plotly <- ggplotly(p)
+
+p_plotly
+```
+
+-   Em primeiro lugar, ficou o município de Cachoeiro de Itapemirim que apresentou os maiores valores médios para todos os combustíveis analisados.  
+
+-   Em segundo lugar, ficou o município de Linhares.  
+
+-   Em terceiro, veio a Serra, com excessão do Etanol - em que Vila Velha apresentou um preço maior.
+
+-   Cariacica e Vitória apresentaram as menores médias, ocupando o quarto e quinto lugar, respectivamente.
+
+```{r}
+valores_medios_cidade <- function(nome_cidade,dados){
+  postos_mais_caros <- dados %>%
+  filter(Municipio == nome_cidade) %>%
+  group_by(Revenda,Produto) %>%
+  summarise(Valor_medio =
+              mean(Valor.de.Venda,na.rm=TRUE)) %>%
+  group_by(Produto)%>%
+  slice_max(Valor_medio, n=3)
+  
+  return(postos_mais_caros)
+
+}
+```
+
+## Postos de combustível com maiores médias nas cidades do Espírito Santo
+
+```{r results='asis'}
+
+
+for (x in unique(pull(filter(arquivo,Estado...Sigla == "ES"),Municipio)))
+  {
+  print(knitr::kable(valores_medios_cidade(x,arquivo),caption=c("Postos com maiores médias de valor dos combustíveis no município de ", x)))
+}
+#}
+
+```
+
+### Média de combustíveis nacional
+
+

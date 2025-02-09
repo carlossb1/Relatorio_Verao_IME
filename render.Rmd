@@ -1,0 +1,36 @@
+---
+title: "Projeto Final Curso Verao IME"
+author: "José Carlos"
+date: "2025-02-04"
+output: html_document
+email: "josecarlosbarbt@gmail.com"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library (tidyverse)
+```
+
+## R Markdown
+
+O objetivo desse trabalho é exercitar os conteúdos vistos durante o curso de verão, ofertado pelo IME-USP - ministrado pela Bea @beatrizmils.
+
+
+
+```{r mtcars}
+dataset <- mtcars
+names(dataset)
+
+dataset %>% 
+  summarise(mean_cyl=mean(cyl)
+            ,stdevi=sd(cyl))
+```
+
+## Including Plots
+
+```{r dataframe}
+
+?summary
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
