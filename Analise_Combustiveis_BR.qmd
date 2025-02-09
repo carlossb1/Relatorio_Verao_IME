@@ -9,6 +9,7 @@ execute:
 df-print: paged
 lang: pt-BR
 toc: True
+echo: False
 ---
 
 ![](https://www.ime.usp.br/media/identidade_visual/imagens/IME+USP/Padr%C3%A3o/SVG/Vertical%20azul.svg){fig-align="center" width="30%"}
@@ -79,24 +80,67 @@ media_por_estado <- group_by(arquivo, Estado...Sigla,Produto) %>%
 
 knitr::kable(media_por_estado)
 ```
-```{r}
-media_diaria_nacional <- arquivo %>%
+```{r heatmap, results='asis'}
+media_diaria_nacional <- function(arquivo,produto){
+  filter(arquivo,Produto == produto) %>%
   group_by(Estado...Sigla,Produto,Data.da.Coleta) %>%
   summarise(Valor.Medio = mean(Valor.de.Venda, na.rm = TRUE))
+}
 
-p <- ggplot(filter(media_diaria_nacional,Produto=="GASOLINA ADITIVADA"),aes(x=Data.da.Coleta,y=Estado...Sigla,fill=Valor.Medio))+
-  geom_tile()+
-  labs(title="Preço médio GASOLINA ADITIVADA",x="Data do Registro", y="Sigla do Estado")+
-  scale_fill_gradient(low="white",high="blue")
+media_diaria_nacional_aditivada <- media_diaria_nacional(arquivo,"GASOLINA ADITIVADA")
 
-p_plotly <- ggplotly(p)
+media_diaria_nacional_gasolina <- media_diaria_nacional(arquivo,"GASOLINA")
 
-p_plotly
+media_diaria_nacional_etanol <- media_diaria_nacional (arquivo,"ETANOL")
+
+
+plotar_heatmap <- function(dados,produto,cor){
+  ggplot(dados,aes(x=Data.da.Coleta,y=Estado...Sigla,fill=Valor.Medio))+
+  geom_tile(aes(fill = Valor.Medio))+
+  labs(title=paste("Preço médio ",produto),x="Data do Registro", y="Sigla do Estado")+
+  scale_fill_gradient(low="white",high=cor)
+
+
+}
+
+#p2 <- plotar_heatmap(media_diaria_nacional_gasolina,"GASOLINA")
+#p3 <- plotar_heatmap(media_diaria_nacional_etanol,"ETANOL")
+
+#p_plotly2 <- ggplotly(p2)
+#p_plotly3 <- ggplotly(p3)
+
+
 ```
+```{r}
+
+p <- plotar_heatmap(media_diaria_nacional_aditivada,"GASOLINA ADITIVADA","blue")
+p_plotly_aditivada = ggplotly(p)
+
+p_plotly_aditivada
+```
+```{r}
+
+p <- plotar_heatmap(media_diaria_nacional_gasolina,"GASOLINA","green")
+p_plotly_gasolina = ggplotly(p)
+
+p_plotly_gasolina
+```
+```{r}
+
+p <- plotar_heatmap(media_diaria_nacional_etanol,"ETANOL","red")
+p_plotly_etanol = ggplotly(p)
+
+p_plotly_etanol
+```
+
+## Média diária nacional para o produto ETANOL
+
+
+
 
 ## Comparação entre a variação dos valores dos combustíveis no ES x Brasil
 
-```{r}
+```{r plot_variacao_precos}
 p <- ggplot()+
   geom_line(data= media_produtos_nacional, aes(x=Data.da.Coleta,y=Valor.medio,colour=Produto))+
   geom_line(data = media_produtos_es,linetype="dotted",
@@ -111,7 +155,7 @@ p_plotly
 
 ```
 
-```{r}
+```{r plot_preco_por_cidade_es}
 
 
 media_por_municipio_es <- filter(arquivo,Estado...Sigla == "ES") %>%
@@ -137,7 +181,7 @@ p_plotly
 
 -   Cariacica e Vitória apresentaram as menores médias, ocupando o quarto e quinto lugar, respectivamente.
 
-```{r}
+```{r funcao_medias_cidade}
 valores_medios_cidade <- function(nome_cidade,dados){
   postos_mais_caros <- dados %>%
   filter(Municipio == nome_cidade) %>%
@@ -154,7 +198,7 @@ valores_medios_cidade <- function(nome_cidade,dados){
 
 ## Postos de combustível com maiores médias nas cidades do Espírito Santo
 
-```{r results='asis'}
+```{r tabelas_valores_es, results='asis'}
 
 
 for (x in unique(pull(filter(arquivo,Estado...Sigla == "ES"),Municipio)))
@@ -165,6 +209,5 @@ for (x in unique(pull(filter(arquivo,Estado...Sigla == "ES"),Municipio)))
 
 ```
 
-### Média de combustíveis nacional
 
 
