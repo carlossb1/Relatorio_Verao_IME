@@ -29,6 +29,13 @@ library(tidyverse)
 library(plotly)
 library(purrr)
 library(lubridate)
+library(geobr)
+library(sf)
+
+
+coordenadas_estados <- geobr::read_state(
+year = 2019)
+
 arquivo <- read.csv("precos-gasolina-etanol-12.csv",sep=";")
 ```
 
@@ -77,6 +84,38 @@ media_produtos_nacional <- arquivo %>%
 ## Estados com maior valor médio por categoria de combustível
 
 ```{r}
+#| echo: True
+
+# Media da soma dos valores dos três tipos de combustível no período
+
+media_total_estados <- arquivo %>% 
+  group_by(Estado...Sigla) %>%
+  summarise(Valor.Medio = mean(Valor.de.Venda,na.rm=TRUE))%>%
+  arrange(Estado...Sigla,desc(Valor.Medio))
+
+# Agrupando com os dados do pacote do IPEA para obter as coordenadas dos estados
+
+mapa_brasil <- dplyr::left_join(coordenadas_estados,media_total_estados, by = c("abbrev_state" = "Estado...Sigla" ))
+
+
+```
+
+```{r}
+#| echo: True
+
+#Plot do mapa
+
+ggplot() +
+geom_sf(data=mapa_brasil,
+aes(fill=Valor.Medio), color = NA , size=.15)+
+labs(subtitle="Preço de venda dos combustíveis", size=8) +
+scale_fill_distiller(palette= "Blues", name = "Preço de venda",direction=1)+
+theme_minimal()
+
+```
+
+
+```{r}
 
 #| echo: True
 
@@ -86,7 +125,8 @@ media_por_estado <- group_by(arquivo, Estado...Sigla,Produto) %>%
   group_by(Produto) %>%
   slice_head(n= 5)
 
-knitr::kable(media_por_estado)
+
+knitr::kable(media_total_estados)
 ```
 
 ```{r heatmap, results='asis'}
