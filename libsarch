@@ -1,0 +1,12 @@
+Arquivos de setup
+
+Rstudio-AUR:
+https://aur.archlinux.org/packages/rstudio-desktop
+
+Tarball do Quarto:
+https://github.com/quarto-dev/quarto-cli/releases/download/v1.6.40/quarto-1.6.40-linux-arm64.tar.gz
+
+Pacotes necessários para instalação do Geobr:
+https://aur.archlinux.org/packages/udunits
+https://archlinux.org/packages/core/x86_64/gcc-fortran/
+https://archlinux.org/packages/extra/x86_64/gdal/
