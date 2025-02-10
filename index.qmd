@@ -14,7 +14,7 @@ echo: False
 
 ![](https://www.ime.usp.br/media/identidade_visual/imagens/IME+USP/Padr%C3%A3o/SVG/Vertical%20azul.svg){fig-align="center" width="30%"}
 
-## Quarto
+## Introdução
 
 Uma análise simples visando praticar os conceitos abordados no curso sobre relatórios reprodutíveis com R lecionado pela Bea @beamilz.
 
@@ -23,6 +23,8 @@ Uma análise simples visando praticar os conceitos abordados no curso sobre rela
 O dataset escolhido foi o [histórico de vendas Etanol + Gasolina Comum - Dezembro/2024](https://dados.gov.br/dados/conjuntos-dados/serie-historica-de-precos-de-combustiveis-e-de-glp)
 
 ```{r}
+#| echo: True
+#| 
 library(tidyverse)
 library(plotly)
 library(purrr)
@@ -34,7 +36,7 @@ arquivo <- read.csv("precos-gasolina-etanol-12.csv",sep=";")
 
 ```{r}
 #| label: tbl-dados
-#| tbl-cap: Tabela inicial
+#| tbl-cap: Dados importados
 
 knitr::kable(head(arquivo))
 
@@ -45,6 +47,8 @@ glimpse(arquivo)
 ```
 
 ## Conversão de valores
+
+Conversão dos valores das colunas de texto "Data.da.Coleta" para datetime, e da coluna "Valor.de.Venda" para numérico.
 
 ```{r}
 #| echo: True
@@ -74,6 +78,8 @@ media_produtos_nacional <- arquivo %>%
 
 ```{r}
 
+#| echo: True
+
 media_por_estado <- group_by(arquivo, Estado...Sigla,Produto) %>%
   summarise(Valor.Medio = mean(Valor.de.Venda, na.rm = TRUE)) %>%
   arrange(Produto,desc(Valor.Medio)) %>%
@@ -82,6 +88,7 @@ media_por_estado <- group_by(arquivo, Estado...Sigla,Produto) %>%
 
 knitr::kable(media_por_estado)
 ```
+
 ```{r heatmap, results='asis'}
 media_diaria_nacional <- function(arquivo,produto){
   filter(arquivo,Produto == produto) %>%
@@ -108,6 +115,7 @@ plotar_heatmap <- function(dados,produto,cor){
 
 
 ```
+
 ```{r}
 
 p <- plotar_heatmap(media_diaria_nacional_aditivada,"GASOLINA ADITIVADA","blue")
@@ -115,6 +123,7 @@ p_plotly_aditivada = ggplotly(p)
 
 p_plotly_aditivada
 ```
+
 ```{r}
 
 p <- plotar_heatmap(media_diaria_nacional_gasolina,"GASOLINA","green")
@@ -122,6 +131,7 @@ p_plotly_gasolina = ggplotly(p)
 
 p_plotly_gasolina
 ```
+
 ```{r}
 
 p <- plotar_heatmap(media_diaria_nacional_etanol,"ETANOL","red")
@@ -130,13 +140,14 @@ p_plotly_etanol = ggplotly(p)
 p_plotly_etanol
 ```
 
-
 Quando observados individualmente, os estados não apresentaram variações elevadas nos preços. Os estados da região norte mantiveram um padrão de valores altos para os 3 tipos de combustíveis analisados, mantendo-se no topo do ranking de estados com preço mais alto para esses produtos.
-
 
 ## Comparação entre a variação dos valores dos combustíveis no ES x Brasil
 
 ```{r plot_variacao_precos}
+
+#| echo: True
+
 p <- ggplot()+
   geom_line(data= media_produtos_nacional, aes(x=Data.da.Coleta,y=Valor.medio,colour=Produto))+
   geom_line(data = media_produtos_es,linetype="dotted",
@@ -152,7 +163,6 @@ p_plotly
 ```
 
 Analisando como os valores dos produtos se comportaram durante o mês de Dezembro, podemos observar que os valores dos combustíveis no Espírito Santo (linha tracejada) se mantiveram acima da média nacional por quase todo o período observado. As excessões foram os dias 23,30 e 31 de Dezembro, em que os dois tipos de gasolina registraram valor abaixo da média nacional, e o etanol se aproximou da média nacional.
-
 
 ```{r plot_preco_por_cidade_es}
 
@@ -207,6 +217,3 @@ for (x in unique(pull(filter(arquivo,Estado...Sigla == "ES"),Municipio)))
 #}
 
 ```
-
-
-
