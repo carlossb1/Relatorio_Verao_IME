@@ -13,11 +13,9 @@ toc: True
 echo: False
 ---
 
-
-
 ## Introdução
 
-Uma análise simples visando praticar os conceitos abordados no curso sobre relatórios reprodutíveis com R lecionado pela Bea @beamilz.
+Uma análise simples visando praticar os conceitos abordados no curso sobre relatórios reprodutíveis com R lecionado pela [Bea](https://beamilz.com/).<br> \ Não consegui finalizar a análise à tempo, tem várias coisinhas que ainda quero alterar, incluindo coisas importantes para manter a reprodutibilidade. Pretendo continuar trabalhando nesse projeto mantido dentro do repositório no [github](https://github.com/carlossb1/Relatorio_Verao_IME).
 
 ## Inicialização das bibliotecas e carregamento do dataset
 
@@ -49,6 +47,7 @@ arquivo <- read.csv("precos-gasolina-etanol-12.csv",sep=";")
 knitr::kable(head(arquivo))
 
 ```
+
 ## Estrutura do dataset
 
 ```{r}
@@ -57,7 +56,7 @@ knitr::kable(head(arquivo))
 knitr::kable(summary(arquivo))
 ```
 
-Podemos observar que as todas as colunas importadas estão formatadas como colunas de texto, e que elas não contém valores nulos, com exceção da coluna "Valor.de.Compra"
+Podemos observar que as todas as colunas importadas estão formatadas como colunas de texto, e que elas não contém valores nulos, com exceção da coluna "Valor.de.Compra", como não usaremos essa coluna, podemos dispensar o uso do parâmetro na.rm nas funções de sumarização.
 
 ## Conversão de valores
 
@@ -79,12 +78,12 @@ arquivo <- arquivo %>%
 #| echo: True 
 media_produtos_es <- filter(arquivo,Estado...Sigla=="ES") %>%
   group_by(Data.da.Coleta,Produto) %>%
-  summarise(Valor.medio = mean(Valor.de.Venda,na.rm=TRUE)) %>%
+  summarise(Valor.medio = mean(Valor.de.Venda)) %>%
   arrange(Produto,desc(Valor.medio))
 
 media_produtos_nacional <- arquivo %>%
   group_by(Data.da.Coleta,Produto) %>%
-  summarise(Valor.medio = mean(Valor.de.Venda, na.rm=TRUE))
+  summarise(Valor.medio = mean(Valor.de.Venda))
 
 ```
 
@@ -97,7 +96,7 @@ media_produtos_nacional <- arquivo %>%
 
 media_total_estados <- arquivo %>% 
   group_by(Estado...Sigla) %>%
-  summarise(Valor.Medio = mean(Valor.de.Venda,na.rm=TRUE))%>%
+  summarise(Valor.Medio = mean(Valor.de.Venda))%>%
   arrange(desc(Valor.Medio),Estado...Sigla) %>%
   mutate(Colocação= row_number()) %>%
   select(Colocação, everything())
@@ -125,14 +124,13 @@ theme_minimal()
 
 ```
 
-
 ```{r}
 #| label: estados_ordenados
 #| tbl-cap: "Estados ordenados por maior preço médio de venda"
 #| echo: True
 
 media_por_estado <- group_by(arquivo, Estado...Sigla,Produto) %>%
-  summarise(Valor.Medio = mean(Valor.de.Venda, na.rm = TRUE)) %>%
+  summarise(Valor.Medio = mean(Valor.de.Venda)) %>%
   arrange(Produto,desc(Valor.Medio)) %>%
   group_by(Produto) %>%
   slice_head(n= 5)
@@ -143,13 +141,13 @@ knitr::kable(media_total_estados,align="c")
 
 Durante o período da coleta, o Espírito Santo apresentou o 12º maior valor médio no preço dos combustíveis somados.
 
-## Variação dos preços nos estados nos dias de coleta das informações 
+## Variação dos preços nos estados nos dias de coleta das informações
 
 ```{r heatmap}
 media_diaria_nacional <- function(arquivo,produto){
   filter(arquivo,Produto == produto) %>%
   group_by(Estado...Sigla,Produto,Data.da.Coleta) %>%
-  summarise(Valor.Medio = mean(Valor.de.Venda, na.rm = TRUE))
+  summarise(Valor.Medio = mean(Valor.de.Venda))
 }
 
 media_diaria_nacional_aditivada <- media_diaria_nacional(arquivo,"GASOLINA ADITIVADA")
@@ -171,7 +169,9 @@ plotar_heatmap <- function(dados,produto,cor){
 
 
 ```
+
 \
+
 ```{r}
 
 p <- plotar_heatmap(media_diaria_nacional_aditivada,"GASOLINA ADITIVADA","#0618bd")
@@ -179,7 +179,9 @@ p_plotly_aditivada = ggplotly(p)
 
 p_plotly_aditivada
 ```
+
 \
+
 ```{r}
 
 p <- plotar_heatmap(media_diaria_nacional_gasolina,"GASOLINA","#06bd36")
@@ -187,7 +189,9 @@ p_plotly_gasolina = ggplotly(p)
 
 p_plotly_gasolina
 ```
+
 \
+
 ```{r}
 
 p <- plotar_heatmap(media_diaria_nacional_etanol,"ETANOL","#bd0606")
@@ -195,6 +199,7 @@ p_plotly_etanol = ggplotly(p)
 
 p_plotly_etanol
 ```
+
 \
 
 Quando observados individualmente, os estados não apresentaram variações elevadas nos preços. Os estados da região norte mantiveram um padrão de valores altos para os 3 tipos de combustíveis analisados, mantendo-se no topo do ranking de estados com preço mais alto para esses produtos.
@@ -218,6 +223,7 @@ p_plotly <- ggplotly(p)
 p_plotly
 
 ```
+
 \
 Analisando como os valores dos produtos se comportaram durante o mês de Dezembro, podemos observar que os valores dos combustíveis no Espírito Santo (linha tracejada) se mantiveram acima da média nacional por quase todo o período observado. As excessões foram os dias 23,30 e 31 de Dezembro, em que os dois tipos de gasolina registraram valor abaixo da média nacional, e o etanol se aproximou da média nacional.
 
@@ -226,13 +232,14 @@ Analisando como os valores dos produtos se comportaram durante o mês de Dezembr
 
 media_por_municipio_es <- filter(arquivo,Estado...Sigla == "ES") %>%
   group_by(Municipio,Produto)%>%
-  summarise(Valor.medio = mean(Valor.de.Venda, na.rm=TRUE))%>%
+  summarise(Valor.medio = mean(Valor.de.Venda))%>%
   arrange(Produto,desc(Valor.medio))
 
 knitr::kable(media_por_municipio_es)
 ```
+
 \
--   Em primeiro lugar, ficou o município de Cachoeiro de Itapemirim que apresentou os maiores valores médios para todos os combustíveis analisados.  
+- Em primeiro lugar, ficou o município de Cachoeiro de Itapemirim que apresentou os maiores valores médios para todos os combustíveis analisados.  
 
 -   Em segundo lugar, ficou o município de Linhares.  
 
@@ -247,7 +254,7 @@ valores_medios_cidade <- function(nome_cidade,dados){
   filter(Municipio == nome_cidade) %>%
   group_by(Revenda,Produto) %>%
   summarise(Valor_medio =
-              mean(Valor.de.Venda,na.rm=TRUE)) %>%
+              mean(Valor.de.Venda)) %>%
   group_by(Produto)%>%
   slice_max(Valor_medio, n=3)
   
@@ -268,20 +275,31 @@ for (x in unique(pull(filter(arquivo,Estado...Sigla == "ES"),Municipio)))
 #}
 
 ```
+
 ## Conclusão
 
-.....
+Com base no trabalho realizado, foi possível analisar um pouco do comportamento do valor dos combustíveis.
 
+Infelizmente ainda não consegui finalizar a análise, algumas lições que tirei desse processo que pretendo melhorar posteriormente são:
 
-\
+-   Poderia ter abordado outras medidas de dispersão, seria interessante ver o comportamento dos desvios.
+
+-   Ao confrontar as outras medidas de dispersão, escolha da média somada dos combustíveis não pareceu ser uma métrica boa para avaliação.
+
+-   Melhorar
+
+-   Melhorar a área de citações
+
+## Agradecimentos
+
+Gostaria de agradecer à toda a turma do curso, os temas debatidos durante as aulas foram muito legais. Agradeço também à todos os envolvidos no desenvolvimento dos pacotes utilizados e suas dependências. Sem o esforço desse pessoal seria impossível ter desenvolvido esse trabalho.
+
+Fiquei muito feliz de poder aprender um pouco com cada um de vocês.
+
+## Citações
 
 ```{r citacoes}
 
 cite_packages(output = "paragraph", out.dir = ".")
 
-```
-
-```{r}
-
-devtools::session_info()
 ```
