@@ -4,6 +4,7 @@ author: "José Carlos Barbosa"
 format: html
 title-block-banner: "FFDDFF"
 editor: visual
+bibliography: grateful-refs.bib
 execute:
   warning: False
 df-print: paged
@@ -12,7 +13,7 @@ toc: True
 echo: False
 ---
 
-![](https://www.ime.usp.br/media/identidade_visual/imagens/IME+USP/Padr%C3%A3o/SVG/Vertical%20azul.svg){fig-align="center" width="30%"}
+
 
 ## Introdução
 
@@ -31,7 +32,7 @@ library(purrr)
 library(lubridate)
 library(geobr)
 library(sf)
-
+library(grateful)
 
 coordenadas_estados <- geobr::read_state(
 year = 2019)
@@ -48,10 +49,15 @@ arquivo <- read.csv("precos-gasolina-etanol-12.csv",sep=";")
 knitr::kable(head(arquivo))
 
 ```
+## Estrutura do dataset
 
 ```{r}
-glimpse(arquivo)
+#| label: tbl-estutura
+#| tbl-cap: Estrutura do dataset
+knitr::kable(summary(arquivo))
 ```
+
+Podemos observar que as todas as colunas importadas estão formatadas como colunas de texto, e que elas não contém valores nulos, com exceção da coluna "Valor.de.Compra"
 
 ## Conversão de valores
 
@@ -59,11 +65,12 @@ Conversão dos valores das colunas de texto "Data.da.Coleta" para datetime, e da
 
 ```{r}
 #| echo: True
-arquivo$Data.da.Coleta <- gsub('[/]','-',
-                               arquivo$Data.da.Coleta)
-arquivo$Data.da.Coleta <- lubridate::dmy(arquivo$Data.da.Coleta)
 
-arquivo$Valor.de.Venda <- as.numeric(gsub('[,]','.', arquivo$Valor.de.Venda))
+arquivo <- arquivo %>%
+  mutate(
+    Data.da.Coleta =dmy(gsub('[/]','-',Data.da.Coleta)),
+    Valor.de.Venda = as.numeric(gsub(',','.',Valor.de.Venda))
+)
 ```
 
 ## Calculo das médias
@@ -91,11 +98,15 @@ media_produtos_nacional <- arquivo %>%
 media_total_estados <- arquivo %>% 
   group_by(Estado...Sigla) %>%
   summarise(Valor.Medio = mean(Valor.de.Venda,na.rm=TRUE))%>%
-  arrange(Estado...Sigla,desc(Valor.Medio))
+  arrange(desc(Valor.Medio),Estado...Sigla) %>%
+  mutate(Colocação= row_number()) %>%
+  select(Colocação, everything())
+
+  names(media_total_estados) <- c("Colocação", "Sigla Estado","Valor médio")
 
 # Agrupando com os dados do pacote do IPEA para obter as coordenadas dos estados
 
-mapa_brasil <- dplyr::left_join(coordenadas_estados,media_total_estados, by = c("abbrev_state" = "Estado...Sigla" ))
+mapa_brasil <- dplyr::left_join(coordenadas_estados,media_total_estados, by = c("abbrev_state" = "Sigla Estado" ))
 
 
 ```
@@ -107,8 +118,8 @@ mapa_brasil <- dplyr::left_join(coordenadas_estados,media_total_estados, by = c(
 
 ggplot() +
 geom_sf(data=mapa_brasil,
-aes(fill=Valor.Medio), color = NA , size=.15)+
-labs(subtitle="Preço de venda dos combustíveis", size=8) +
+aes(fill=`Valor médio`), color = NA , size=.15)+
+labs(subtitle="Preço médio de venda nos estados (DEZ/2024)",caption="Fonte: Portal de Dados Abertos", size=8) +
 scale_fill_distiller(palette= "Blues", name = "Preço de venda",direction=1)+
 theme_minimal()
 
@@ -116,7 +127,8 @@ theme_minimal()
 
 
 ```{r}
-
+#| label: estados_ordenados
+#| tbl-cap: "Estados ordenados por maior preço médio de venda"
 #| echo: True
 
 media_por_estado <- group_by(arquivo, Estado...Sigla,Produto) %>%
@@ -126,10 +138,14 @@ media_por_estado <- group_by(arquivo, Estado...Sigla,Produto) %>%
   slice_head(n= 5)
 
 
-knitr::kable(media_total_estados)
+knitr::kable(media_total_estados,align="c")
 ```
 
-```{r heatmap, results='asis'}
+Durante o período da coleta, o Espírito Santo apresentou o 12º maior valor médio no preço dos combustíveis somados.
+
+## Variação dos preços nos estados nos dias de coleta das informações 
+
+```{r heatmap}
 media_diaria_nacional <- function(arquivo,produto){
   filter(arquivo,Produto == produto) %>%
   group_by(Estado...Sigla,Produto,Data.da.Coleta) %>%
@@ -146,8 +162,8 @@ media_diaria_nacional_etanol <- media_diaria_nacional (arquivo,"ETANOL")
 plotar_heatmap <- function(dados,produto,cor){
   ggplot(dados,aes(x=Data.da.Coleta,y=Estado...Sigla,fill=Valor.Medio))+
   geom_tile(aes(fill = Valor.Medio))+
-  labs(title=paste("Preço médio ",produto),x="Data do Registro", y="Sigla do Estado")+
-    theme(plot.title = element_text(hjust = 0.5))+
+  labs(title=paste("Preços médios coletados ",produto),x="Data do Registro", y="Sigla do Estado")+
+    theme(panel.grid.manjor = element_blank(), panel.grid.minor = element_blank(), panel.background = element_blank(), plot.title = element_text(hjust = 0.5))+
   scale_fill_gradient(low="white",high=cor)
 
 
@@ -155,30 +171,31 @@ plotar_heatmap <- function(dados,produto,cor){
 
 
 ```
-
+\
 ```{r}
 
-p <- plotar_heatmap(media_diaria_nacional_aditivada,"GASOLINA ADITIVADA","blue")
+p <- plotar_heatmap(media_diaria_nacional_aditivada,"GASOLINA ADITIVADA","#0618bd")
 p_plotly_aditivada = ggplotly(p)
 
 p_plotly_aditivada
 ```
-
+\
 ```{r}
 
-p <- plotar_heatmap(media_diaria_nacional_gasolina,"GASOLINA","green")
+p <- plotar_heatmap(media_diaria_nacional_gasolina,"GASOLINA","#06bd36")
 p_plotly_gasolina = ggplotly(p)
 
 p_plotly_gasolina
 ```
-
+\
 ```{r}
 
-p <- plotar_heatmap(media_diaria_nacional_etanol,"ETANOL","red")
+p <- plotar_heatmap(media_diaria_nacional_etanol,"ETANOL","#bd0606")
 p_plotly_etanol = ggplotly(p)
 
 p_plotly_etanol
 ```
+\
 
 Quando observados individualmente, os estados não apresentaram variações elevadas nos preços. Os estados da região norte mantiveram um padrão de valores altos para os 3 tipos de combustíveis analisados, mantendo-se no topo do ranking de estados com preço mais alto para esses produtos.
 
@@ -193,15 +210,15 @@ p <- ggplot()+
   geom_line(data = media_produtos_es,linetype="dotted",
             aes(x=Data.da.Coleta, y = Valor.medio, colour = Produto))+
   labs(x="Data do registro",y="Valor médio de venda",title="Variação Nacional x Estado do Espírito Santo")+
-  theme(plot.title = element_text(hjust = 0)
-        )
+  theme(plot.title = element_text(hjust = 0),
+        panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.background = element_blank())
 
 p_plotly <- ggplotly(p)
   
 p_plotly
 
 ```
-
+\
 Analisando como os valores dos produtos se comportaram durante o mês de Dezembro, podemos observar que os valores dos combustíveis no Espírito Santo (linha tracejada) se mantiveram acima da média nacional por quase todo o período observado. As excessões foram os dias 23,30 e 31 de Dezembro, em que os dois tipos de gasolina registraram valor abaixo da média nacional, e o etanol se aproximou da média nacional.
 
 ```{r plot_preco_por_cidade_es}
@@ -212,16 +229,9 @@ media_por_municipio_es <- filter(arquivo,Estado...Sigla == "ES") %>%
   summarise(Valor.medio = mean(Valor.de.Venda, na.rm=TRUE))%>%
   arrange(Produto,desc(Valor.medio))
 
-
-p <- ggplot(media_por_municipio_es, aes(y=Produto,x=Valor.medio,fill= Municipio))+
-  geom_bar(stat="identity", position = "dodge")+
-  labs(x="Preço médio de venda", y = "Produto", title="Preço médio por Município")+
-  theme(plot.title = element_text(hjust = 0.5))
-p_plotly <- ggplotly(p)
-
-p_plotly
+knitr::kable(media_por_municipio_es)
 ```
-
+\
 -   Em primeiro lugar, ficou o município de Cachoeiro de Itapemirim que apresentou os maiores valores médios para todos os combustíveis analisados.  
 
 -   Em segundo lugar, ficou o município de Linhares.  
@@ -231,6 +241,7 @@ p_plotly
 -   Cariacica e Vitória apresentaram as menores médias, ocupando o quarto e quinto lugar, respectivamente.
 
 ```{r funcao_medias_cidade}
+
 valores_medios_cidade <- function(nome_cidade,dados){
   postos_mais_caros <- dados %>%
   filter(Municipio == nome_cidade) %>%
@@ -256,4 +267,21 @@ for (x in unique(pull(filter(arquivo,Estado...Sigla == "ES"),Municipio)))
 }
 #}
 
+```
+## Conclusão
+
+.....
+
+
+\
+
+```{r citacoes}
+
+cite_packages(output = "paragraph", out.dir = ".")
+
+```
+
+```{r}
+
+devtools::session_info()
 ```
