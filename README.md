@@ -13,5 +13,5 @@ A ideia era ver como os preços de combustíveis no meu estado (Espírito Santo)
 - [ ] Padronizar as cores das visualizações.
 - [ ] Refatorar algumas partes dos código (melhorar a clareza dos nomes das funções e formatação).
 - [ ] Finalizar a análise das cidades do ES.
-- [ ] Inserir versões dos pacotes utilizados.
-- [ ] Inserir citações 
+- [x] Inserir versões dos pacotes utilizados.
+- [ ] Inserir citações (faltam algumas) 
